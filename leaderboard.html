@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<title>Final Assault Leaderboard</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+	<style>
+	  table {margin: auto}
+	  body,.table th,.table td,td,h1,div.img {text-align: center}
+	  td {position:relative}
+	  .anchor {position:absolute; top: -50vh}
+	  .anchor:target + * {color: green}
+	</style>
+  <body>
+	<div class="img"><a href="https://phasermm.com" title="Link to official Leaderboard"><img alt="Final Assault Logo" src="https://phasermm.com/images/finalAssault_logo.png"></a></div>
+	<h1 class="title">Unofficial Leaderboard</h1>
+	<p>Empty names and players who haven't been ranked yet are filtered out. This page is javascript-free.
+	<table class="table">
+	  <thead>
+		<tr><th>Position<th>Official Rank<th>Player<th>Platform
+	  <tbody>
+		{{range $i, $row := .}}
+		<tr>
+		  <td>{{add1 $i}}
+		  <td>{{.Rank}}
+		  <td><a class="anchor" id="{{.DisplayName}}"></a><a href="#{{.DisplayName}}">{{.DisplayName}}</a>
+		  <td>{{.Platform}}{{end}}
