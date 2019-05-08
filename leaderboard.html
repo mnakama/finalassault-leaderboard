@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+{{define "head"}}<!DOCTYPE html>
 <html lang="en">
   <head>
 	<title>Final Assault Leaderboard</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
 	<style>
-	  table {margin: auto}
+	  table {margin: auto; margin-top: 1em}
 	  body,.table th,.table td,td,h1,div.img {text-align: center}
 	  td {position:relative}
 	  .anchor {position:absolute; top: -50vh}
@@ -17,10 +17,10 @@
 	<table class="table">
 	  <thead>
 		<tr><th>Position<th>Official Rank<th>Player<th>Platform
-	  <tbody>
+	  <tbody>{{end}}{{define "body"}}
 		{{range $i, $row := .}}
 		<tr>
 		  <td>{{add1 $i}}
 		  <td>{{.Rank}}
 		  <td><a class="anchor" id="{{.DisplayName}}"></a><a href="#{{.DisplayName}}">{{.DisplayName}}</a>
-		  <td>{{.Platform}}{{end}}
+		  <td>{{.Platform}}{{end}}{{end}}

@@ -54,6 +54,12 @@ func main() {
 }
 
 func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
+	err := t_leaderboard.ExecuteTemplate(w, "head", nil)
+	if err != nil {
+		log.Println(err)
+	}
+	w.(http.Flusher).Flush()
+
 	data, err := getLeaderboardData()
 	if err != nil {
 		log.Println(err)
@@ -66,15 +72,26 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = t_leaderboard.Execute(w, rows)
+	err = t_leaderboard.ExecuteTemplate(w, "body", rows)
 	if err != nil {
 		log.Println(err)
 	}
 }
 
 func getLeaderboardData() ([]byte, error) {
-	data, err := ioutil.ReadFile("/tmp/leaderboard.json")
-	return data, err
+	resp, err := http.Get("https://phasermm.com/api/dashboards/publicLeaderboard/retail/0")
+
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	//data, err := ioutil.ReadFile("/tmp/leaderboard.json")
+	return body, err
 }
 
 func parseLeaderboardData(data []byte) ([]playerData, error) {
