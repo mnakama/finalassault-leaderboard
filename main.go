@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -21,6 +22,12 @@ type playerData struct {
 type leaderboardData struct {
 	Result  string       `json:"result"`
 	Players []playerData `json:"players"`
+	ShowAll bool
+}
+
+type pageData struct {
+	Players *[]playerData
+	ShowAll bool
 }
 
 var t_leaderboard *template.Template
@@ -54,7 +61,12 @@ func main() {
 }
 
 func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
-	err := t_leaderboard.ExecuteTemplate(w, "head", nil)
+	var pData pageData
+
+	r.ParseForm()
+	pData.ShowAll, _ = strconv.ParseBool(r.FormValue("all"))
+
+	err := t_leaderboard.ExecuteTemplate(w, "head", pData)
 	if err != nil {
 		log.Println(err)
 	}
@@ -66,13 +78,15 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := parseLeaderboardData(data)
+	rows, err := parseLeaderboardData(data, pData.ShowAll)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	err = t_leaderboard.ExecuteTemplate(w, "body", rows)
+	pData.Players = &rows
+
+	err = t_leaderboard.ExecuteTemplate(w, "body", pData)
 	if err != nil {
 		log.Println(err)
 	}
@@ -94,7 +108,7 @@ func getLeaderboardData() ([]byte, error) {
 	return body, err
 }
 
-func parseLeaderboardData(data []byte) ([]playerData, error) {
+func parseLeaderboardData(data []byte, showAll bool) ([]playerData, error) {
 	var lbData leaderboardData
 	var cooked []playerData
 
@@ -104,6 +118,13 @@ func parseLeaderboardData(data []byte) ([]playerData, error) {
 
 	if lbData.Result != "great success" {
 		return cooked, fmt.Errorf("server returned failure: %s", lbData.Result)
+	}
+
+	if showAll {
+		for i := range lbData.Players {
+			lbData.Players[i].Rank = uint(i) + 1
+		}
+		return lbData.Players, nil
 	}
 
 	cooked = make([]playerData, 0, len(lbData.Players))
