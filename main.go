@@ -55,6 +55,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/", serveLeaderboard)
+	router.HandleFunc("/leaderboard", serveLeaderboard)
 	router.HandleFunc("/finalassault/leaderboard", serveLeaderboard)
 
 	http.ListenAndServe(":8000", router)
