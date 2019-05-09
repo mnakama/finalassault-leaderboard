@@ -136,7 +136,7 @@ func parseLeaderboardData(data []byte, showAll bool) ([]playerData, error) {
 
 		if row.DisplayName == "" {
 			nullCount++
-			if nullCount >= 5 && zmode >= 0 {
+			if nullCount >= 50 && zmode >= 0 {
 				zmode = 1
 			}
 			continue
