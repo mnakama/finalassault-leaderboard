@@ -11,6 +11,7 @@
 	  body {margin-top:1em; margin-bottom:1.5em}
 	  body,.table th,.table td,td,h1,div.img {text-align: center}
 	  td {position:relative}
+	  td:nth-child(3) {margin-top:0; margin-bottom:0; padding-top:0; padding-bottom:0; vertical-align:middle}
 	  th.name {min-width:260px}
 	  .anchor {position:absolute; top: -50vh}
 	  .anchor:target + * {color: green}
@@ -27,4 +28,4 @@
 		<tr>
 		  <td>{{.Rank}}
 		  <td><a class=anchor id="{{.DisplayName}}"></a><a href="#{{.DisplayName}}">{{.DisplayName}}</a>
-		  <td>{{.Platform}}{{end}}{{end}}
+		  <td>{{if (eq .Platform "steam")}}<img width=30 alt=Steam title=Steam src="https://ionicons.com/ionicons/svg/logo-steam.svg">{{else if (eq .Platform "oculus")}}<img width=24 alt=Oculus title=Oculus src="http://finalassault.gnuman.games/res/oculus-logo.svg">{{else}}{{.Platform}}{{end}}{{end}}{{end}}
