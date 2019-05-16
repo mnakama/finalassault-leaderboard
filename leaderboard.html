@@ -10,26 +10,20 @@
 	  table {margin: auto; margin-top: 1em}
 	  body,.table th,.table td,td,h1,div.img {text-align: center}
 	  td {position:relative}
-	  {{if .ShowAll}}th.name {min-width:373px}
-	  {{else}}th.name {min-width:260px}
-	  {{end}}
+	  th.name {min-width:260px}
 	  .anchor {position:absolute; top: -50vh}
 	  .anchor:target + * {color: green}
 	</style>
   <body>
 	<div class=img><a href="https://phasermm.com" title="Link to official Leaderboard"><img alt="Final Assault Logo" src="https://phasermm.com/images/finalAssault_logo.png"></a></div>
 	<h1 class=title>Unofficial Leaderboard</h1>
-	<p>{{if (not .ShowAll)}}Empty names and players who haven't been ranked yet are filtered out. {{end}}This page is javascript-free.
-	  {{if (not .ShowAll)}}<a href="?all=true"><button>Show All</button></a>
-	  {{else}}<a href="."><button>Hide Unranked+Blank</button></a>
-	  {{end}}
+	<p>This page is javascript-free.
 	<table class=table>
 	  <thead>
-		<tr>{{if (not .ShowAll)}}<th>Position{{end}}<th>Official Rank<th class=name>Player<th>Platform
-	  <tbody>{{end}}{{define "body"}}{{$showAll := .ShowAll}}
+		<tr><th>Rank<th class=name>Player<th>Platform
+	  <tbody>{{end}}{{define "body"}}
 		{{range $i, $row := .Players}}
 		<tr>
-		  {{if (not $showAll)}}<td>{{add1 $i}}{{end}}
 		  <td>{{.Rank}}
 		  <td><a class=anchor id="{{.DisplayName}}"></a><a href="#{{.DisplayName}}">{{.DisplayName}}</a>
 		  <td>{{.Platform}}{{end}}{{end}}
