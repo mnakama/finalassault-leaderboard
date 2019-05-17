@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
 	<title>Final Assault Leaderboard</title>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.7.4/css/bulma.min.css">
+	<link rel="stylesheet" href="http://finalassault.gnuman.games/style/bulma.css">
 	<meta name="author" content="Gnuman">
 	<meta name="description" content="Gnuman's Unofficial Final Assault Leaderboard">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,7 +17,7 @@
 	  .anchor:target + * {color: green}
 	</style>
   <body>
-	<div class=img><a href="https://phasermm.com" title="Link to official Leaderboard"><img alt="Final Assault Logo" src="https://phasermm.com/images/finalAssault_logo.png"></a></div>
+	<div class=img><a href="https://phasermm.com" title="Link to official Leaderboard"><img alt="Final Assault Logo" src="http://finalassault.gnuman.games/favicon.ico"></a></div>
 	<h1 class=title>Unofficial Leaderboard</h1>
 	<p>This page is javascript-free.
 	<table class=table>
@@ -28,4 +28,4 @@
 		<tr>
 		  <td>{{.Rank}}
 		  <td><a class=anchor id="{{.DisplayName}}"></a><a href="#{{.DisplayName}}">{{.DisplayName}}</a>
-		  <td>{{if (eq .Platform "steam")}}<img width=30 alt=Steam title=Steam src="https://ionicons.com/ionicons/svg/logo-steam.svg">{{else if (eq .Platform "oculus")}}<img width=23 alt=Oculus title=Oculus src="http://finalassault.gnuman.games/res/oculus-logo.svg">{{else}}{{.Platform}}{{end}}{{end}}{{end}}
+		  <td>{{if (eq .Platform "steam")}}<img width=30 alt=Steam title=Steam src="http://finalassault.gnuman.games/res/steam-logo.svg">{{else if (eq .Platform "oculus")}}<img width=23 alt=Oculus title=Oculus src="http://finalassault.gnuman.games/res/oculus-logo.svg">{{else}}{{.Platform}}{{end}}{{end}}{{end}}
