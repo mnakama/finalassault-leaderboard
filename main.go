@@ -16,6 +16,7 @@ type playerData struct {
 	DisplayName string `json:"displayName"`
 	PlayerID    uint   `json:"playerid"`
 	Platform    string `json:"platform"`
+	Info        *playerInfo
 }
 
 type leaderboardData struct {
@@ -111,6 +112,10 @@ func parseLeaderboardData(data []byte) ([]playerData, error) {
 	for i := range lbData.Players {
 		lbData.Players[i].DisplayName = nameToUnicode(lbData.Players[i].DisplayName)
 		lbData.Players[i].Rank = uint(i) + 1
+		info, ok := playerLookup[lbData.Players[i].PlayerID]
+		if ok {
+			lbData.Players[i].Info = &info
+		}
 	}
 
 	return lbData.Players, nil
