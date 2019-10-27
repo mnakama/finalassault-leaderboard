@@ -36,11 +36,13 @@ var playerLookup = map[uint]playerInfo{
 		Youtube: "channel/UCnPGJInTNIj1Qq4qCMdHqHg",
 	},
 	7010: { // photogineer
-		Twitch: "photogineer",
-		Steam:  "profiles/76561198168719260",
+		Twitch:  "photogineer",
+		Steam:   "profiles/76561198168719260",
+		Youtube: "channel/UCIC4xwPkibJXB-ExvTNju1g",
 	},
 	7227: { // NotSporks
-		Twitch: "maybesporks",
+		Twitch:  "maybesporks",
+		Youtube: "channel/UCOrsHqpF_umj3vyr9J05mMg",
 	},
 	7741: { // PhaserLock Alex
 		Twitch: "dav3schneider",
