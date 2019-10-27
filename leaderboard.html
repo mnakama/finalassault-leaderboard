@@ -28,7 +28,8 @@
 		  <td>{{.Rank}}
 		  <td><a class=anchor id="{{.DisplayName}}"></a><a href="#{{.DisplayName}}">{{.DisplayName}}</a>
 		  <td>{{if (eq .Platform "steam") -}}
-			  <img width=30 alt=Steam title=Steam src="http://finalassault.gnuman.games/res/steam-logo.svg">
+			  <a href="{{.GetSteam}}">
+			  <img width=30 alt=Steam title=Steam src="http://finalassault.gnuman.games/res/steam-logo.svg"></a>
 			  {{- else if (eq .Platform "oculus") -}}
 			  <img width=23 alt=Oculus title=Oculus src="http://finalassault.gnuman.games/res/oculus-logo.svg">
 			  {{- else if (eq .Platform "vive") -}}

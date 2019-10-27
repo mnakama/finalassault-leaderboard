@@ -180,3 +180,11 @@ func nameToUnicode(name string) string {
 
 	return string(out)
 }
+
+func (p *playerData) GetSteam() string {
+	if p.Info != nil && p.Info.Steam != "" {
+		return fmt.Sprintf("https://steamcommunity.com/%s", p.Info.Steam)
+	}
+
+	return fmt.Sprintf("https://steamcommunity.com/search/users/#text=%s", p.DisplayName)
+}
