@@ -131,7 +131,7 @@ var latinMap = map[rune]byte{
 	0x201a: 0x82, // steam name: Larsenik - ラルセン
 	0x201c: 0x93, // steam name: [鴻哥] [Hong]
 	0x201d: 0x94, // steam name: Rob888 🔥
-	0x201e: 0x84, // steam name: ®BensEye™
+	0x201e: 0x84, // steam name: [0xae] BensEye™
 	0x2021: 0x87, // steam name: DD-class大凤
 	0x2026: 0x85, // steam name lookup on: elacc波兰妹
 	0x2030: 0x89, // steam name: 骑着蜗牛奔宝马
