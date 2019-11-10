@@ -7,6 +7,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"runtime/pprof"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -22,17 +26,42 @@ type playerData struct {
 type leaderboardData struct {
 	Result  string       `json:"result"`
 	Players []playerData `json:"players"`
-	ShowAll bool
 }
 
 type pageData struct {
 	Players *[]playerData
-	ShowAll bool
 }
 
-var t_leaderboard *template.Template
+var (
+	t_leaderboard *template.Template
+	client        = http.Client{}
+)
 
 func main() {
+	if os.Getenv("PROFILE") != "" {
+		c := make(chan os.Signal)
+		signal.Notify(c, os.Interrupt)
+
+		f, err := os.Create("/tmp/cpu.prof")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer f.Close()
+
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal(err)
+		}
+		defer pprof.StopCPUProfile()
+
+		go (func() {
+			<-c
+			log.Println("Caught interrupt")
+			pprof.StopCPUProfile()
+			f.Close()
+			os.Exit(0)
+		})()
+	}
+
 	t_leaderboard = template.Must(template.New("leaderboard.html").
 		ParseFiles("leaderboard.html"))
 
@@ -49,29 +78,33 @@ func main() {
 	router.HandleFunc("/leaderboard", serveLeaderboard)
 	router.HandleFunc("/finalassault/leaderboard", serveLeaderboard)
 
-	http.ListenAndServe(":8000", router)
+	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
 func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 	var pData pageData
 
+	start := time.Now()
 	err := t_leaderboard.ExecuteTemplate(w, "head", pData)
 	if err != nil {
 		log.Println(err)
 	}
 	w.(http.Flusher).Flush()
+	head := time.Now()
 
 	data, err := getLeaderboardData()
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	fetch := time.Now()
 
 	rows, err := parseLeaderboardData(data)
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	parse := time.Now()
 
 	pData.Players = &rows
 
@@ -79,10 +112,16 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println(err)
 	}
+	end := time.Now()
+
+	log.Printf("head: %v, fetch: %v, parse: %v, template: %s\nTotal: %v\n", head.Sub(start), fetch.Sub(head), parse.Sub(fetch), end.Sub(parse), end.Sub(start))
 }
 
 func getLeaderboardData() ([]byte, error) {
-	resp, err := http.Get("https://phasermm.com/api/dashboards/publicLeaderboard/retail/0")
+	start := time.Now()
+	resp, err := client.Get("https://phasermm.com/api/dashboards/publicLeaderboard/retail/0")
+
+	fb := time.Now()
 
 	if err != nil {
 		return nil, err
@@ -93,20 +132,25 @@ func getLeaderboardData() ([]byte, error) {
 		return nil, err
 	}
 
+	end := time.Now()
+
+	log.Printf("ttfb: %v load: %v\n", fb.Sub(start), end.Sub(fb))
+
 	//data, err := ioutil.ReadFile("/tmp/leaderboard.json")
 	return body, err
 }
 
 func parseLeaderboardData(data []byte) ([]playerData, error) {
 	var lbData leaderboardData
-	var cooked []playerData
+
+	lbData.Players = make([]playerData, 0, 2000)
 
 	if err := json.Unmarshal(data, &lbData); err != nil {
-		return cooked, err
+		return lbData.Players, err
 	}
 
 	if lbData.Result != "great success" {
-		return cooked, fmt.Errorf("server returned failure: %s", lbData.Result)
+		return lbData.Players, fmt.Errorf("server returned failure: %s", lbData.Result)
 	}
 
 	for i := range lbData.Players {
