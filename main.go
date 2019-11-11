@@ -108,10 +108,42 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 	pData.Players = &rows
 
-	err = t_leaderboard.ExecuteTemplate(w, "body", pData)
-	if err != nil {
-		log.Println(err)
+	// skip the template; it's too slow. This saves about 120ms out of 250ms on page load time.
+	for _, player := range rows {
+		safeName := template.HTMLEscapeString(player.DisplayName)
+
+		fmt.Fprintf(w,
+			"<tr><td>%d"+
+				"<td><a class=anchor id=\"%s\"></a><a href=\"#%s\">%s</a>"+
+				"<td>",
+			player.Rank,
+			safeName,
+			safeName,
+			safeName,
+		)
+
+		if player.Platform == "steam" {
+			fmt.Fprintf(w, "<a href=\"%s\"><img width=30 alt=Steam title=Steam src=http://finalassault.gnuman.games/res/steam-logo.svg></a>", player.GetSteam())
+		} else if player.Platform == "oculus" {
+			fmt.Fprint(w, "<img width=23 alt=Oculus title=Oculus src=http://finalassault.gnuman.games/res/oculus-logo.svg>")
+		} else if player.Platform == "vive" {
+			fmt.Fprint(w, "<img width=23 alt=Vive title=Vive src=http://finalassault.gnuman.games/res/vive-logo.svg>")
+		} else {
+			fmt.Fprint(w, player.Platform)
+		}
+
+		fmt.Fprintf(w, "<td>")
+		if player.Info != nil {
+			if player.Info.Twitch != "" {
+				fmt.Fprintf(w, "<a title=Twitch href=\"https://www.twitch.tv/%s\"><img width=18 alt=Twitch src=http://finalassault.gnuman.games/res/twitch-logo.svg></a> ", player.Info.Twitch)
+			}
+
+			if player.Info.Youtube != "" {
+				fmt.Fprintf(w, "<a title=Youtube href=\"https://www.youtube.com/%s\"><img width=25 alt=Youtube src=http://finalassault.gnuman.games/res/youtube-logo.svg></a> ", player.Info.Youtube)
+			}
+		}
 	}
+
 	end := time.Now()
 
 	log.Printf("head: %v, fetch: %v, parse: %v, template: %s\nTotal: %v\n", head.Sub(start), fetch.Sub(head), parse.Sub(fetch), end.Sub(parse), end.Sub(start))
