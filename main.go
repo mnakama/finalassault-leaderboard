@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/ioutil"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/json-iterator/go"
 )
 
 type playerData struct {
@@ -177,7 +177,7 @@ func parseLeaderboardData(data []byte) ([]playerData, error) {
 
 	lbData.Players = make([]playerData, 0, 2000)
 
-	if err := json.Unmarshal(data, &lbData); err != nil {
+	if err := jsoniter.Unmarshal(data, &lbData); err != nil {
 		return lbData.Players, err
 	}
 
