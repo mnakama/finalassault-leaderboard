@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime/pprof"
+	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -122,11 +123,12 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 			safeName,
 		)
 
-		if player.Platform == "steam" {
+		lcPlatform := strings.ToLower(player.Platform)
+		if lcPlatform == "steam" {
 			fmt.Fprintf(w, "<a href=\"%s\"><img width=30 alt=Steam title=Steam src=http://finalassault.gnuman.games/res/steam-logo.svg></a>", player.GetSteam())
-		} else if player.Platform == "oculus" {
+		} else if lcPlatform == "oculus" {
 			fmt.Fprint(w, "<img width=23 alt=Oculus title=Oculus src=http://finalassault.gnuman.games/res/oculus-logo.svg>")
-		} else if player.Platform == "vive" {
+		} else if lcPlatform == "vive" {
 			fmt.Fprint(w, "<img width=23 alt=Vive title=Vive src=http://finalassault.gnuman.games/res/vive-logo.svg>")
 		} else {
 			fmt.Fprint(w, player.Platform)
