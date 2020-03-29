@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -12,7 +14,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/json-iterator/go"
+	"google.golang.org/api/iterator"
 )
 
 type playerData struct {
@@ -90,7 +92,6 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 	}
 	w.(http.Flusher).Flush()
-	head := time.Now()
 
 	rows, err := getLeaderboardData()
 	if err != nil {
@@ -99,10 +100,15 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 	}
 	fetch := time.Now()
 
-	pData.Players = &rows
-
 	// skip the template; it's too slow. This saves about 120ms out of 250ms on page load time.
-	for _, player := range rows {
+	for {
+		player, err := rows.Next()
+		if err != nil {
+			if err != iterator.Done {
+				log.Printf("Error while parsing player data: %s", err)
+			}
+			break
+		}
 		safeName := template.HTMLEscapeString(player.DisplayName)
 
 		fmt.Fprintf(w,
@@ -140,14 +146,43 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 	end := time.Now()
 
-	log.Printf("fetch+parse: %v, template: %s\nTotal: %v\n", fetch.Sub(head), end.Sub(fetch), end.Sub(start))
+	log.Printf("fetch+render: %s\nTotal: %v\n", end.Sub(fetch), end.Sub(start))
 }
 
 // used to create an array of the correct size
 var playerCount = 2000
 
-func getLeaderboardData() ([]playerData, error) {
-	var lbData leaderboardData
+type PlayerIterator struct {
+	index uint
+	dec   *json.Decoder
+	body  io.ReadCloser
+}
+
+func (p *PlayerIterator) Next() (*playerData, error) {
+	if p.dec == nil {
+		return nil, iterator.Done
+	}
+
+	player, err := parsePlayer(p.dec)
+	if err != nil {
+		p.body.Close()
+		p.body = nil
+		p.dec = nil
+		return nil, err
+	}
+
+	player.Rank = p.index
+	p.index++
+
+	info, ok := playerLookup[player.PlayerID]
+	if ok {
+		player.Info = &info
+	}
+
+	return &player, nil
+}
+
+func getLeaderboardData() (*PlayerIterator, error) {
 	start := time.Now()
 
 	// fetch json
@@ -159,37 +194,126 @@ func getLeaderboardData() ([]playerData, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
-
-	dec := jsoniter.NewDecoder(resp.Body)
 
 	// parse json
 
-	lbData.Players = make([]playerData, 0, playerCount)
-
-	if err := dec.Decode(&lbData); err != nil {
-		return lbData.Players, err
+	dec := json.NewDecoder(resp.Body)
+	t, err := dec.Token()
+	if t.(json.Delim) != '{' {
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("Unexpected json token: %v", t)
 	}
 
-	if lbData.Result != "great success" {
-		return lbData.Players, fmt.Errorf("server returned failure: %s", lbData.Result)
-	}
+parseLoop:
+	for {
+		t, err = dec.Token()
+		if err != nil {
+			return nil, err
+		}
 
-	playerCount = len(lbData.Players)
+		switch v := t.(type) {
+		case string:
+			switch v {
 
-	for i := range lbData.Players {
-		lbData.Players[i].DisplayName = nameToUnicode(lbData.Players[i].DisplayName)
-		lbData.Players[i].Rank = uint(i) + 1
-		info, ok := playerLookup[lbData.Players[i].PlayerID]
-		if ok {
-			lbData.Players[i].Info = &info
+			case "result":
+				t, err = dec.Token()
+				if t.(string) != "great success" {
+					if err != nil {
+						return nil, err
+					}
+					return nil, fmt.Errorf("Expected json \"great success\", got: %v", t)
+				}
+			case "players":
+				t, err = dec.Token()
+				if t.(json.Delim) != '[' {
+					if err != nil {
+						return nil, err
+					}
+					return nil, fmt.Errorf("Expected json array, got: %v", t)
+				}
+
+				// stop here; this is what we want in the iterator
+				break parseLoop
+			default:
+				break parseLoop
+			}
+		case json.Delim:
+			if v == ']' {
+				// no more players
+				return nil, iterator.Done
+			}
+		default:
+			break parseLoop
 		}
 	}
 
-	end := time.Now()
-	log.Printf("ttfb: %v load+parse: %v\n", fb.Sub(start), end.Sub(fb))
+	log.Printf("ttfb: %v\n", fb.Sub(start))
 
-	return lbData.Players, nil
+	return &PlayerIterator{
+		index: 1,
+		dec:   dec,
+		body:  resp.Body,
+	}, nil
+}
+
+func parsePlayer(dec *json.Decoder) (playerData, error) {
+	var p playerData
+
+	t, err := dec.Token()
+	if err != nil {
+		return p, err
+	}
+
+	if t.(json.Delim) == ']' {
+		// no more players
+		return p, iterator.Done
+	}
+
+	if t.(json.Delim) != '{' {
+		return p, fmt.Errorf("Expected json { for player, got: %v", t)
+	}
+
+	for {
+		t, err = dec.Token()
+		if err != nil {
+			return p, err
+		}
+		switch v := t.(type) {
+		case string:
+			switch v {
+			case "displayName":
+				t, err = dec.Token()
+				if err != nil {
+					return p, err
+				}
+				p.DisplayName = nameToUnicode(t.(string))
+			case "playerid":
+				t, err = dec.Token()
+				if err != nil {
+					return p, err
+				}
+				p.PlayerID = uint(t.(float64))
+			case "platform":
+				t, err = dec.Token()
+				if err != nil {
+					return p, err
+				}
+				p.Platform = t.(string)
+			default:
+				fmt.Printf("%T, %v\n", t, t)
+			}
+		case json.Delim:
+			if v == '}' {
+				return p, nil
+			}
+		default:
+			fmt.Printf("%T, %v\n", t, t)
+		}
+	}
+
+	return p, nil
 }
 
 // lookup table for converting the broken data back into its proper utf8 form

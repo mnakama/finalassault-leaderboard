@@ -4,5 +4,5 @@ go 1.12
 
 require (
 	github.com/gorilla/mux v1.7.1
-	github.com/json-iterator/go v1.1.8
+	google.golang.org/api v0.20.0
 )
