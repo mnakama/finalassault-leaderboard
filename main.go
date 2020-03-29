@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -93,19 +92,12 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 	w.(http.Flusher).Flush()
 	head := time.Now()
 
-	data, err := getLeaderboardData()
+	rows, err := getLeaderboardData()
 	if err != nil {
 		log.Println(err)
 		return
 	}
 	fetch := time.Now()
-
-	rows, err := parseLeaderboardData(data)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	parse := time.Now()
 
 	pData.Players = &rows
 
@@ -148,11 +140,18 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 	end := time.Now()
 
-	log.Printf("head: %v, fetch: %v, parse: %v, template: %s\nTotal: %v\n", head.Sub(start), fetch.Sub(head), parse.Sub(fetch), end.Sub(parse), end.Sub(start))
+	log.Printf("fetch+parse: %v, template: %s\nTotal: %v\n", fetch.Sub(head), end.Sub(fetch), end.Sub(start))
 }
 
-func getLeaderboardData() ([]byte, error) {
+// used to create an array of the correct size
+var playerCount = 2000
+
+func getLeaderboardData() ([]playerData, error) {
+	var lbData leaderboardData
 	start := time.Now()
+
+	// fetch json
+
 	resp, err := client.Get("https://phasermm.com/api/dashboards/publicLeaderboard/retail/0")
 
 	fb := time.Now()
@@ -161,31 +160,22 @@ func getLeaderboardData() ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
 
-	end := time.Now()
+	dec := jsoniter.NewDecoder(resp.Body)
 
-	log.Printf("ttfb: %v load: %v\n", fb.Sub(start), end.Sub(fb))
+	// parse json
 
-	//data, err := ioutil.ReadFile("/tmp/leaderboard.json")
-	return body, err
-}
+	lbData.Players = make([]playerData, 0, playerCount)
 
-func parseLeaderboardData(data []byte) ([]playerData, error) {
-	var lbData leaderboardData
-
-	lbData.Players = make([]playerData, 0, 2000)
-
-	if err := jsoniter.Unmarshal(data, &lbData); err != nil {
+	if err := dec.Decode(&lbData); err != nil {
 		return lbData.Players, err
 	}
 
 	if lbData.Result != "great success" {
 		return lbData.Players, fmt.Errorf("server returned failure: %s", lbData.Result)
 	}
+
+	playerCount = len(lbData.Players)
 
 	for i := range lbData.Players {
 		lbData.Players[i].DisplayName = nameToUnicode(lbData.Players[i].DisplayName)
@@ -195,6 +185,9 @@ func parseLeaderboardData(data []byte) ([]playerData, error) {
 			lbData.Players[i].Info = &info
 		}
 	}
+
+	end := time.Now()
+	log.Printf("ttfb: %v load+parse: %v\n", fb.Sub(start), end.Sub(fb))
 
 	return lbData.Players, nil
 }
