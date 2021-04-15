@@ -123,11 +123,13 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 
 		lcPlatform := strings.ToLower(player.Platform)
 		if lcPlatform == "steam" {
-			fmt.Fprintf(w, "<a href=\"%s\"><img width=30 alt=Steam title=Steam src=http://finalassault.gnuman.games/res/steam-logo.svg></a>", player.GetSteam())
+			fmt.Fprintf(w, "<a href=\"%s\"><img width=30 alt=Steam title=Steam src=/res/steam-logo.svg></a>", player.GetSteam())
 		} else if lcPlatform == "oculus" {
-			fmt.Fprint(w, "<img width=23 alt=Oculus title=Oculus src=http://finalassault.gnuman.games/res/oculus-logo.svg>")
+			fmt.Fprint(w, "<img width=23 alt=Oculus title=Oculus src=/res/oculus-logo.svg>")
 		} else if lcPlatform == "vive" {
-			fmt.Fprint(w, "<img width=23 alt=Vive title=Vive src=http://finalassault.gnuman.games/res/vive-logo.svg>")
+			fmt.Fprint(w, "<img width=23 alt=Vive title=Vive src=/res/vive-logo.svg>")
+		} else if lcPlatform == "playstation" {
+			fmt.Fprint(w, "<img width=23 alt=PlayStation title=PlayStation src=/res/playstation-logo.svg>")
 		} else {
 			fmt.Fprint(w, player.Platform)
 		}
@@ -135,18 +137,19 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "<td>")
 		if player.Info != nil {
 			if player.Info.Twitch != "" {
-				fmt.Fprintf(w, "<a title=Twitch href=\"https://www.twitch.tv/%s\"><img width=18 alt=Twitch src=http://finalassault.gnuman.games/res/twitch-logo.svg></a> ", player.Info.Twitch)
+				fmt.Fprintf(w, "<a title=Twitch href=\"https://www.twitch.tv/%s\"><img width=18 alt=Twitch src=/res/twitch-logo.svg></a> ", player.Info.Twitch)
 			}
 
 			if player.Info.Youtube != "" {
-				fmt.Fprintf(w, "<a title=Youtube href=\"https://www.youtube.com/%s\"><img width=25 alt=Youtube src=http://finalassault.gnuman.games/res/youtube-logo.svg></a> ", player.Info.Youtube)
+				fmt.Fprintf(w, "<a title=Youtube href=\"https://www.youtube.com/%s\"><img width=25 alt=Youtube src=/res/youtube-logo.svg></a> ", player.Info.Youtube)
 			}
 		}
 	}
 
 	end := time.Now()
 
-	log.Printf("fetch+render: %s\nTotal: %v\n", end.Sub(fetch), end.Sub(start))
+	log.Printf("fetch: %s render: %s\nTotal: %v\n",
+		fetch.Sub(start), end.Sub(fetch), end.Sub(start))
 }
 
 // used to create an array of the correct size
@@ -316,14 +319,25 @@ func parsePlayer(dec *json.Decoder) (playerData, error) {
 	return p, nil
 }
 
-// lookup table for converting the broken data back into its proper utf8 form
+// lookup table for converting the broken data back into its proper utf8 form.
+//
+// To add to this map, find the character's utf-8 encoding on https://unicode-table.com/en
+// and replace the garbled runes with what they should be. Most utf-8 encodings are 3 messed up
+// runes long.
+//
+// Example (in hex): e2 2dc 153 => e2 98 9c
+// results in unicode character: ☜
+
 var latinMap = map[rune]byte{
 	0x152:  0x8c, // steam name: YPA达瓦里希
 	0x153:  0x9c, // steam name: ✠ Balloneta ✠
 	0x160:  0xa6,
 	0x178:  0x9f, // steam name: Rob888 🔥
+	0x17d:  0x8e, // 虎 steam name: Morty 虎龍
+	0x17e:  0x9e, // ☞
 	0x192:  0x83, // steam name: Larsenik - ラルセン
 	0x2c6:  0x88, // steam name: 装甲驱逐舰レ级
+	0x2dc:  0x98, // ☜
 	0x2013: 0x96, // steam name: 千ㄖㄒ卄卂几 丂山丨千ㄒ
 	0x2014: 0x97, // steam name: 时空之门VR-03
 	0x2018: 0x91, // steam name: 骑着蜗牛奔宝马
@@ -332,11 +346,13 @@ var latinMap = map[rune]byte{
 	0x201c: 0x93, // steam name: [鴻哥] [Hong]
 	0x201d: 0x94, // steam name: Rob888 🔥
 	0x201e: 0x84, // steam name: [0xae] BensEye™
+	0x2020: 0x86, // 冬 steam name: ❄冬❄雪❄
 	0x2021: 0x87, // steam name: DD-class大凤
+	0x2022: 0x95, // ʕ steam name: Martin ʕ´•ᴥ•`ʔ (GER)
 	0x2026: 0x85, // steam name lookup on: elacc波兰妹
 	0x2030: 0x89, // steam name: 骑着蜗牛奔宝马
-	0x203a: 0x9b, // steam name: 骑着蜗牛奔宝马
 	0x2039: 0x8b, // steam name: 时空之门VR-03
+	0x203a: 0x9b, // steam name: 骑着蜗牛奔宝马
 	0x20ac: 0x80, // steam name: 装甲驱逐舰レ级
 	0x2122: 0x99, // steam name (guessed): 不慌 不忙
 }
