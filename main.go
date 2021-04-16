@@ -138,6 +138,9 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 				fmt.Fprintf(w, "<a title=Youtube href=\"https://www.youtube.com/%s\"><img width=25 alt=Youtube src=/res/youtube-logo.svg></a> ", player.Info.Youtube)
 			}
 		}
+
+		// uncomment to see playerID in an HTML comment
+		//fmt.Fprintf(w, "<!-- %d -->", player.PlayerID)
 	}
 
 	end := time.Now()
@@ -147,7 +150,7 @@ func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
 }
 
 // used to create an array of the correct size
-var playerCount = 2000
+var playerCount = 7000
 
 func getLeaderboardData() ([]playerData, error) {
 	var lbData leaderboardData

@@ -74,4 +74,8 @@ var playerLookup = map[uint]playerInfo{
 	14237: { // Excel
 		Twitch: "hps_excel",
 	},
+	28352: { // CrazierRex
+		Steam:   "id/CrazierRex",
+		Youtube: "user/CrazierRex1/videos",
+	},
 }
