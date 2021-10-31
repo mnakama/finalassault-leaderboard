@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -78,7 +79,20 @@ func main() {
 	router.HandleFunc("/leaderboard", serveLeaderboard)
 	router.HandleFunc("/finalassault/leaderboard", serveLeaderboard)
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+	const path string = "/tmp/finalassault-leaderboard"
+	os.Remove(path)
+
+	listener, err := net.Listen("unix", path)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer os.Remove(path)
+
+	if err := os.Chmod(path, 0666); err != nil {
+		log.Panic(err)
+	}
+
+	log.Fatal(http.Serve(listener, router))
 }
 
 func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
