@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+
+description="FinalAssault Leaderboard"
+
+command=/usr/local/bin/finalassault-leaderboard
+command_user='nobody:nobody'
+command_background=true
+pidfile="/run/${RC_SVCNAME}.pid"
+
+start() {
+		cd /usr/local/bin
+		default_start
+}

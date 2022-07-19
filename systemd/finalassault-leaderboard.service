@@ -1,0 +1,16 @@
+[Unit]
+Description=Final Assault leaderboard
+After=network.target
+
+[Service]
+Type=exec
+Restart=always
+WorkingDirectory=/var/lib
+ExecStart=/usr/local/bin/finalassault-leaderboard
+User=nobody
+Group=nobody
+#Nice=0
+#IOSchedulingClass=none
+
+[Install]
+WantedBy=multi-user.target
