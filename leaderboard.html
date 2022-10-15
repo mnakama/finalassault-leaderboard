@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
 	<title>Final Assault Leaderboard</title>
+	<link rel=icon href=/res/finalAssault_logo.png>
 	<link rel="stylesheet" href="/style/bulma.css">
 	<meta name="author" content="Gnuman">
 	<meta name="description" content="Gnuman's Unofficial Final Assault Leaderboard">
@@ -17,7 +18,7 @@
 	  .anchor:target + * {color: green}
 	</style>
   <body>
-	<div class=img><a href="https://phasermm.com" title="Link to official Leaderboard"><img alt="Final Assault Logo" width=157 height=125 src="/favicon.ico"></a></div>
+	<div class=img><a href="https://phasermm.com" title="Link to official Leaderboard"><img alt="Final Assault Logo" width=157 height=125 src=/res/finalAssault_logo.png></a></div>
 	<h1 class=title>Leaderboard</h1>
 	<table class=table>
 	  <thead>
@@ -27,17 +28,17 @@
 		{{range $i, $row := .Players -}}
 <tr><td>{{.Rank -}}
 		  <td><a class=anchor id="{{.DisplayName}}"></a><a href="#{{.DisplayName}}">{{.DisplayName}}</a><td>{{if (eq .Platform "steam") -}}
-			  <a href="{{.GetSteam}}"><img width=30 alt=Steam title=Steam src="http://finalassault.gnuman.games/res/steam-logo.svg"></a>
+			  <a href="{{.GetSteam}}"><img width=30 alt=Steam title=Steam src="/res/steam-logo.svg"></a>
 			  {{- else if (eq .Platform "oculus") -}}
-			  <img width=23 alt=Oculus title=Oculus src="http://finalassault.gnuman.games/res/oculus-logo.svg">
+			  <img width=23 alt=Oculus title=Oculus src="/res/oculus-logo.svg">
 			  {{- else if (eq .Platform "vive") -}}
-			  <img width=23 alt=Vive title=Vive src="http://finalassault.gnuman.games/res/vive-logo.svg">
+			  <img width=23 alt=Vive title=Vive src="/res/vive-logo.svg">
 			  {{- else -}}
 			  {{.Platform}}
 			  {{- end -}}
 		  <td>{{if .Info -}}
-			    {{if .Info.Twitch}}<a title=Twitch href="https://www.twitch.tv/{{.Info.Twitch}}"><img width=18 alt=Twitch src="http://finalassault.gnuman.games/res/twitch-logo.svg"></a> {{end -}}
-			    {{if .Info.Youtube}}<a title=Youtube href="https://www.youtube.com/{{.Info.Youtube}}"><img width=25 alt=Youtube src="http://finalassault.gnuman.games/res/youtube-logo.svg"></a> {{end -}}
+			    {{if .Info.Twitch}}<a title=Twitch href="https://www.twitch.tv/{{.Info.Twitch}}"><img width=18 alt=Twitch src="/res/twitch-logo.svg"></a> {{end -}}
+			    {{if .Info.Youtube}}<a title=Youtube href="https://www.youtube.com/{{.Info.Youtube}}"><img width=25 alt=Youtube src="/res/youtube-logo.svg"></a> {{end -}}
 			    <!--{{if .Info.VRML}}<a title="VRML Profile" href="https://vrmasterleague.com/FinalAssault/Teams/{{.Info.VRML}}">VRML</a>{{end}}-->
 			  {{- end}}
 {{end}}{{end}}

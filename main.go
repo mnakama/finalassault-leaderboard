@@ -78,18 +78,34 @@ func main() {
 	router.HandleFunc("/", serveLeaderboard)
 	router.HandleFunc("/leaderboard", serveLeaderboard)
 	router.HandleFunc("/finalassault/leaderboard", serveLeaderboard)
+	router.PathPrefix("/res/").Handler(
+		http.StripPrefix("/res/",
+			http.FileServer(http.Dir("./res"))))
+	router.PathPrefix("/style/").Handler(
+		http.StripPrefix("/style/",
+			http.FileServer(http.Dir("./style"))))
 
 	const path string = "/tmp/finalassault-leaderboard"
 	os.Remove(path)
 
-	listener, err := net.Listen("unix", path)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer os.Remove(path)
+	var listener net.Listener
+	var err error
+	port := os.Getenv("PORT")
+	if port != "" {
+		listener, err = net.Listen("tcp", ":"+port)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		listener, err = net.Listen("unix", path)
+		if err != nil {
+			log.Panic(err)
+		}
+		defer os.Remove(path)
 
-	if err := os.Chmod(path, 0666); err != nil {
-		log.Panic(err)
+		if err := os.Chmod(path, 0666); err != nil {
+			log.Panic(err)
+		}
 	}
 
 	log.Fatal(http.Serve(listener, router))
