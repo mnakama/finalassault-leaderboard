@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CAFxX/httpcompression"
 	"github.com/gorilla/mux"
 	"github.com/json-iterator/go"
 )
@@ -74,16 +75,17 @@ func main() {
 	//printLeaderboardTable(&lbData)
 	//printLeaderboardHTML(&lbData)
 
+	compress, _ := httpcompression.DefaultAdapter()
 	router := mux.NewRouter()
-	router.HandleFunc("/", serveLeaderboard)
-	router.HandleFunc("/leaderboard", serveLeaderboard)
-	router.HandleFunc("/finalassault/leaderboard", serveLeaderboard)
+	router.Handle("/", compress(serveLeaderboard())).Methods(http.MethodGet)
+	router.Handle("/leaderboard", compress(serveLeaderboard())).Methods(http.MethodGet)
+	router.Handle("/finalassault/leaderboard", compress(serveLeaderboard())).Methods(http.MethodGet)
 	router.PathPrefix("/res/").Handler(
 		http.StripPrefix("/res/",
 			http.FileServer(http.Dir("./res"))))
 	router.PathPrefix("/style/").Handler(
 		http.StripPrefix("/style/",
-			http.FileServer(http.Dir("./style"))))
+			compress(http.FileServer(http.Dir("./style")))))
 
 	const path string = "/tmp/finalassault-leaderboard"
 	os.Remove(path)
@@ -111,72 +113,74 @@ func main() {
 	log.Fatal(http.Serve(listener, router))
 }
 
-func serveLeaderboard(w http.ResponseWriter, r *http.Request) {
-	var pData pageData
+func serveLeaderboard() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var pData pageData
 
-	start := time.Now()
-	err := t_leaderboard.ExecuteTemplate(w, "head", pData)
-	if err != nil {
-		log.Println(err)
-	}
-	w.(http.Flusher).Flush()
-	head := time.Now()
-
-	rows, err := getLeaderboardData()
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	fetch := time.Now()
-
-	pData.Players = &rows
-
-	// skip the template; it's too slow. This saves about 120ms out of 250ms on page load time.
-	for _, player := range rows {
-		safeName := template.HTMLEscapeString(player.DisplayName)
-
-		fmt.Fprintf(w,
-			"<tr><td>%d"+
-				"<td><a class=anchor id=\"%s\"></a><a href=\"#%s\">%s</a>"+
-				"<td>",
-			player.Rank,
-			safeName,
-			safeName,
-			safeName,
-		)
-
-		lcPlatform := strings.ToLower(player.Platform)
-		if lcPlatform == "steam" {
-			fmt.Fprintf(w, "<a href=\"%s\"><img width=30 alt=Steam title=Steam src=/res/steam-logo.svg></a>", player.GetSteam())
-		} else if lcPlatform == "oculus" {
-			fmt.Fprint(w, "<img width=23 alt=Oculus title=Oculus src=/res/oculus-logo.svg>")
-		} else if lcPlatform == "vive" {
-			fmt.Fprint(w, "<img width=23 alt=Vive title=Vive src=/res/vive-logo.svg>")
-		} else if lcPlatform == "playstation" {
-			fmt.Fprint(w, "<img width=23 alt=PlayStation title=PlayStation src=/res/playstation-logo.svg>")
-		} else {
-			fmt.Fprint(w, player.Platform)
+		start := time.Now()
+		err := t_leaderboard.ExecuteTemplate(w, "head", pData)
+		if err != nil {
+			log.Println(err)
 		}
+		w.(http.Flusher).Flush()
+		head := time.Now()
 
-		fmt.Fprintf(w, "<td>")
-		if player.Info != nil {
-			if player.Info.Twitch != "" {
-				fmt.Fprintf(w, "<a title=Twitch href=\"https://www.twitch.tv/%s\"><img width=18 alt=Twitch src=/res/twitch-logo.svg></a> ", player.Info.Twitch)
+		rows, err := getLeaderboardData()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		fetch := time.Now()
+
+		pData.Players = &rows
+
+		// skip the template; it's too slow. This saves about 120ms out of 250ms on page load time.
+		for _, player := range rows {
+			safeName := template.HTMLEscapeString(player.DisplayName)
+
+			fmt.Fprintf(w,
+				"<tr><td>%d"+
+					"<td><a class=anchor id=\"%s\"></a><a href=\"#%s\">%s</a>"+
+					"<td>",
+				player.Rank,
+				safeName,
+				safeName,
+				safeName,
+			)
+
+			lcPlatform := strings.ToLower(player.Platform)
+			if lcPlatform == "steam" {
+				fmt.Fprintf(w, "<a href=\"%s\"><img width=30 alt=Steam title=Steam src=/res/steam-logo.svg></a>", player.GetSteam())
+			} else if lcPlatform == "oculus" {
+				fmt.Fprint(w, "<img width=23 alt=Oculus title=Oculus src=/res/oculus-logo.svg>")
+			} else if lcPlatform == "vive" {
+				fmt.Fprint(w, "<img width=23 alt=Vive title=Vive src=/res/vive-logo.svg>")
+			} else if lcPlatform == "playstation" {
+				fmt.Fprint(w, "<img width=23 alt=PlayStation title=PlayStation src=/res/playstation-logo.svg>")
+			} else {
+				fmt.Fprint(w, player.Platform)
 			}
 
-			if player.Info.Youtube != "" {
-				fmt.Fprintf(w, "<a title=Youtube href=\"https://www.youtube.com/%s\"><img width=25 alt=Youtube src=/res/youtube-logo.svg></a> ", player.Info.Youtube)
+			fmt.Fprintf(w, "<td>")
+			if player.Info != nil {
+				if player.Info.Twitch != "" {
+					fmt.Fprintf(w, "<a title=Twitch href=\"https://www.twitch.tv/%s\"><img width=18 alt=Twitch src=/res/twitch-logo.svg></a> ", player.Info.Twitch)
+				}
+
+				if player.Info.Youtube != "" {
+					fmt.Fprintf(w, "<a title=Youtube href=\"https://www.youtube.com/%s\"><img width=25 alt=Youtube src=/res/youtube-logo.svg></a> ", player.Info.Youtube)
+				}
 			}
+
+			// uncomment to see playerID in an HTML comment
+			//fmt.Fprintf(w, "<!-- %d -->", player.PlayerID)
 		}
 
-		// uncomment to see playerID in an HTML comment
-		//fmt.Fprintf(w, "<!-- %d -->", player.PlayerID)
-	}
+		end := time.Now()
 
-	end := time.Now()
-
-	log.Printf("fetch: %s render: %s\nTotal: %v\n",
-		fetch.Sub(head), end.Sub(fetch), end.Sub(start))
+		log.Printf("fetch: %s render: %s\nTotal: %v\n",
+			fetch.Sub(head), end.Sub(fetch), end.Sub(start))
+	})
 }
 
 // used to create an array of the correct size

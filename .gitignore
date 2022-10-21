@@ -1,5 +1,7 @@
 *~
+/.docker
 /finalassault-leaderboard
+/finalassault-leaderboard.linux.amd64
 /res
 /res_source
 /style
