@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: &name finalassault-leaderboard
+  namespace: nullcorp
+spec:
+  selector:
+    app: *name
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  sessionAffinity: None
+  type: LoadBalancer

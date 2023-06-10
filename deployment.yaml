@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: &name finalassault-leaderboard
+  namespace: nullcorp
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 2
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: *name
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: *name
+    spec:
+      containers:
+      - name: cloudflared
+        image: cloudflare/cloudflared:latest
+        imagePullPolicy: IfNotPresent
+        command: [ "cloudflared" ]
+        args:
+          - tunnel
+          - --no-autoupdate
+          - run
+          - --token
+          - ${cloudflared token}
+
+      - name: *name
+        env:
+        - name: PORT
+          value: "8000"
+        image: kdvbvufclwypbnxl/finalassault-leaderboard
+        imagePullPolicy: IfNotPresent
+
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      terminationGracePeriodSeconds: 30

@@ -1,7 +1,8 @@
 SERVICE = finalassault-leaderboard
 BIN_OUTPUT = $(SERVICE)
 BIN_OUTPUT_DOCKER = $(BIN_OUTPUT).linux.amd64
-IMG_NAME = us-central1-docker.pkg.dev/crafty-nomad-365504/$(SERVICE)/main
+IMG_NAME_GCLOUD = us-central1-docker.pkg.dev/crafty-nomad-365504/$(SERVICE)/main
+IMG_NAME_DOCKER   = kdvbvufclwypbnxl/$(SERVICE)
 GO_SOURCES = main.go playerinfo.go
 
 define HELP
@@ -41,14 +42,21 @@ compose : all Dockerfile docker-compose.yaml
 docker : .docker
 .docker : Dockerfile .dockerignore $(BIN_OUTPUT_DOCKER)
 	echo `date +'%Y%m%dT%H%M%S'`-`git rev-parse --short HEAD`-`git diff HEAD --numstat |wc -l |sed 's/\s\+//g'`_`git rev-parse --abbrev-ref HEAD | tr '/' '_'` > .docker-ts
-	docker build -t $(IMG_NAME):`cat .docker-ts` .
+	docker build -t $(IMG_NAME_GCLOUD):`cat .docker-ts` .
+	docker tag $(IMG_NAME_GCLOUD):`cat .docker-ts` $(IMG_NAME_DOCKER):`cat .docker-ts`
 	mv .docker-ts .docker
 
-# deploy to the cloud
+# deploy to null
 .PHONY : deploy
 deploy : .docker
-	docker push $(IMG_NAME):`cat .docker`
-	gcloud run deploy $(SERVICE) --image $(IMG_NAME):`cat .docker` --region=us-central1 --platform=managed
+	docker push $(IMG_NAME_DOCKER):`cat .docker`
+	kubectl set image deployment/$(SERVICE) $(SERVICE)=$(IMG_NAME_DOCKER):`cat .docker`
+
+# deploy to gcloud
+.PHONY : deploy-gcloud
+deploy-gcloud : .docker
+	docker push $(IMG_NAME_GCLOUD):`cat .docker`
+	gcloud run deploy $(SERVICE) --image $(IMG_NAME_GCLOUD):`cat .docker` --region=us-central1 --platform=managed
 
 $(BIN_OUTPUT) : $(GO_SOURCES) go.mod go.sum
 	CGO_ENABLED=0 go build -o $(BIN_OUTPUT) $(GO_SOURCES)
